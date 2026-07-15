@@ -124,9 +124,7 @@ services:
       - internal
 
   billing-service:
-    build:
-      context: ./billing-service
-      dockerfile: Dockerfile
+    image: ghcr.io/patient-management-microservices/billing-service:latest
     container_name: ${BILLING_SERVICE_HOST}
     restart: always
     depends_on:
