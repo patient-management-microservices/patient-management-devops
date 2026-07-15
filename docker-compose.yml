@@ -1,0 +1,199 @@
+services:
+
+# ========== INFRASTRUCTURE ==========
+
+  patient-service-db:
+    image: postgres:17
+    container_name: ${PATIENT_DB_HOST}
+    restart: always
+    environment:
+      POSTGRES_USER: admin_user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: patient_db
+    ports:
+      - "${PATIENT_DB_PORT}:5432"
+    volumes:
+      - patient_db_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin_user -d patient_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  auth-service-db:
+    image: postgres:17
+    container_name: ${AUTH_DB_HOST}
+    restart: always
+    environment:
+      POSTGRES_USER: admin_user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: auth_db
+    ports:
+      - "${AUTH_DB_PORT}:5432"
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin_user -d auth_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  # KAFKA (KRaft mode)
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: ${KAFKA_HOST}
+    restart: always
+    ports:
+      - "${KAFKA_PORT}:9092"
+      - "${KAFKA_HOST_PORT}:9094"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://${KAFKA_HOST}:9092,PLAINTEXT_HOST://localhost:9094
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@${KAFKA_HOST}:29093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:9094
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"   # convenient for development
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - internal
+    healthcheck:
+      test: [ "CMD-SHELL", "kafka-topics --bootstrap-server ${KAFKA_HOST}:9092 --list" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  # KAFKA UI (Kafdrop)
+  kafdrop:
+    image: obsidiandynamics/kafdrop:latest
+    container_name: ${KAFDROP_HOST}
+    restart: always
+    depends_on:
+      - kafka
+    ports:
+      - "${KAFDROP_PORT}:9091"
+    environment:
+      KAFKA_BROKERCONNECT: ${KAFKA_HOST}:9092
+      JVM_OPTS: "-Xms32M -Xmx64M"
+      SERVER_SERVLET_CONTEXTPATH: "/"
+      SERVER_PORT: 9091
+    networks:
+      - internal
+
+
+# ========== CORE SERVICES ==========
+
+  patient-service:
+    build:
+      context: ./patient-service
+      dockerfile: Dockerfile
+    container_name: ${PATIENT_SERVICE_HOST}
+    restart: always
+    depends_on:
+      - patient-service-db
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: ${PATIENT_SERVICE_PORT}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${PATIENT_DB_HOST}:5432/patient_db
+      SPRING_DATASOURCE_USERNAME: admin_user
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_SQL_INIT_MODE: always
+      BILLING_SERVICE_ADDRESS: ${BILLING_SERVICE_HOST}
+      BILLING_SERVICE_GRPC_PORT: ${BILLING_GRPC_PORT}
+      SPRING_KAFKA_TOPIC_PATIENT: ${KAFKA_TOPIC_PATIENT}
+      SPRING_KAFKA_PRODUCER_KEY_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+      SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER: org.apache.kafka.common.serialization.ByteArraySerializer
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_HOST}:9092
+    networks:
+      - internal
+
+  billing-service:
+    build:
+      context: ./billing-service
+      dockerfile: Dockerfile
+    container_name: ${BILLING_SERVICE_HOST}
+    restart: always
+    depends_on:
+      - patient-service
+    ports:
+      - "${BILLING_SERVICE_PORT}:${BILLING_SERVICE_PORT}"
+      - "${BILLING_GRPC_PORT}:${BILLING_GRPC_PORT}"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: ${BILLING_SERVICE_PORT}
+      GRPC_SERVER_PORT: ${BILLING_GRPC_PORT}
+#      SPRING_DATASOURCE_URL: jdbc:postgresql://patient-service-db:5432/patient_db
+#      SPRING_DATASOURCE_USERNAME: admin_user
+#      SPRING_DATASOURCE_PASSWORD: password
+#      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+#      SPRING_SQL_INIT_MODE: always
+    networks:
+      - internal
+
+  analytics-service:
+    build:
+      context: ./analytics-service
+      dockerfile: Dockerfile
+    container_name: ${ANALYTICS_SERVICE_HOST}
+    restart: always
+    depends_on:
+      - billing-service
+    ports:
+      - "${ANALYTICS_SERVICE_PORT}:${ANALYTICS_SERVICE_PORT}"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: ${ANALYTICS_SERVICE_PORT}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_HOST}:9092
+      SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER: org.apache.kafka.common.serialization.StringDeserializer
+      SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER: org.apache.kafka.common.serialization.ByteArrayDeserializer
+
+    networks:
+      - internal
+
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: ${API_GATEWAY_HOST}
+    restart: always
+    depends_on:
+      - patient-service
+      - billing-service
+      - analytics-service
+    ports:
+      - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
+    environment:
+      SERVER_PORT: ${API_GATEWAY_PORT}
+      PATIENT_SERVICE_URL: http://${PATIENT_SERVICE_HOST}:${PATIENT_SERVICE_PORT}
+#      BILLING_SERVICE_URL: http://billing-service:4001
+#      ANALYTICS_SERVICE_URL: http://analytics-service:4003
+    networks:
+      - internal
+
+
+volumes:
+  patient_db_data:
+  auth_db_data:
+  kafka_data:
+
+networks:
+  internal:
