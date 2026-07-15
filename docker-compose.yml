@@ -176,7 +176,6 @@ services:
     environment:
       SERVER_PORT: ${API_GATEWAY_PORT}
       PATIENT_SERVICE_URL: http://${PATIENT_SERVICE_HOST}:${PATIENT_SERVICE_PORT}
-#      BILLING_SERVICE_URL: http://billing-service:4001
     networks:
       - internal
 
