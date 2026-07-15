@@ -145,9 +145,7 @@ services:
       - internal
 
   analytics-service:
-    build:
-      context: ./analytics-service
-      dockerfile: Dockerfile
+    image: ghcr.io/patient-management-microservices/analytics-service:latest
     container_name: ${ANALYTICS_SERVICE_HOST}
     restart: always
     depends_on:
@@ -166,9 +164,7 @@ services:
 
 
   api-gateway:
-    build:
-      context: ./api-gateway
-      dockerfile: Dockerfile
+    image: ghcr.io/patient-management-microservices/api-gateway:latest
     container_name: ${API_GATEWAY_HOST}
     restart: always
     depends_on:
