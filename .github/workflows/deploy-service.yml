@@ -1,0 +1,36 @@
+name: Deploy Docker Compose
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Update DevOps Repository
+        run: |
+          cd /home/dilshanjay/Apps/patient-management/patient-management-devops
+
+          git fetch origin
+          git reset --hard origin/main
+
+      - name: Pull latest images
+        run: |
+          cd /home/dilshanjay/Apps/patient-management/patient-management-devops
+
+          docker compose pull
+
+      - name: Update containers
+        run: |
+          cd /home/dilshanjay/Apps/patient-management/patient-management-devops
+
+          docker compose up -d --remove-orphans
+
+      - name: Show running containers
+        run: |
+          cd /home/dilshanjay/Apps/patient-management/patient-management-devops
+
+          docker compose ps
