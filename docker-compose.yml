@@ -163,6 +163,27 @@ services:
       - internal
 
 
+  auth-service:
+    image: ghcr.io/patient-management-microservices/auth-service:feature-auth-service
+    container_name: ${AUTH_SERVICE_HOST}
+    restart: always
+    depends_on:
+      - analytics-service
+    ports:
+      - "${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: ${AUTH_SERVICE_PORT}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${AUTH_DB_HOST}:5432/auth_db
+      SPRING_DATASOURCE_USERNAME: admin_user
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_SQL_INIT_MODE: always
+
+    networks:
+      - internal
+
+
   api-gateway:
     image: ghcr.io/patient-management-microservices/api-gateway:latest
     container_name: ${API_GATEWAY_HOST}
