@@ -98,7 +98,7 @@ services:
       - internal
 
 
-# ========== CORE SERVICES ==========++++++
+# ========== CORE SERVICES ==========+++++++
 
   patient-service:
     image: ghcr.io/patient-management-microservices/patient-service:latest
