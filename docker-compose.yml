@@ -189,7 +189,7 @@ services:
 
 
   api-gateway:
-    image: ghcr.io/patient-management-microservices/api-gateway:latest
+    image: ghcr.io/patient-management-microservices/api-gateway:feature-add-auth-service
     container_name: ${API_GATEWAY_HOST}
     restart: always
     depends_on:
@@ -201,6 +201,7 @@ services:
     environment:
       SERVER_PORT: ${API_GATEWAY_PORT}
       PATIENT_SERVICE_URL: http://${PATIENT_SERVICE_HOST}:${PATIENT_SERVICE_PORT}
+      AUTH_SERVICE_URL: http://${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT}
     networks:
       - internal
 
