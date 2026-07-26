@@ -178,7 +178,7 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_SQL_INIT_MODE: never
       JWT_SECRET: bXktc3VwZXItc2VjdXJlLWF1dGgtc2VydmljZS1qd3Qtc2VjcmV0LTEyMzQ1Ng==
-      JWT_EXPIRATION_MS: 36000000
+      JWT_EXPIRATION_MS: 180000
       JWT_ISSUER: auth-service
       JWT_AUDIENCE: patient-management
 
