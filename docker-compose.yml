@@ -169,8 +169,6 @@ services:
     restart: always
     depends_on:
       - analytics-service
-    ports:
-      - "${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}"
     environment:
       SPRING_PROFILES_ACTIVE: prod
       SERVER_PORT: ${AUTH_SERVICE_PORT}
