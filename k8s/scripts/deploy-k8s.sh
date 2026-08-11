@@ -17,7 +17,7 @@ kubectl apply -f "${K8S_DIR}/infrastructure/kafka.yaml"
 echo "Waiting for databases and Kafka..."
 kubectl rollout status statefulset/patient-service-db -n "${NAMESPACE}" --timeout=180s
 kubectl rollout status statefulset/auth-service-db -n "${NAMESPACE}" --timeout=180s
-kubectl rollout status statefulset/kafka -n "${NAMESPACE}" --timeout=240s
+kubectl rollout status statefulset/kafka -n "${NAMESPACE}" --timeout=420s
 
 kubectl apply -f "${K8S_DIR}/infrastructure/kafdrop.yaml"
 kubectl apply -f "${K8S_DIR}/services/billing-service.yaml"
