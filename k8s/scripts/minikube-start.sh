@@ -2,8 +2,8 @@
 set -euo pipefail
 
 PROFILE="${MINIKUBE_PROFILE:-patient-management}"
-CPUS="${MINIKUBE_CPUS:-4}"
-MEMORY="${MINIKUBE_MEMORY:-8192}"
+CPUS="${MINIKUBE_CPUS:-2}"
+MEMORY="${MINIKUBE_MEMORY:-2800}"
 DISK_SIZE="${MINIKUBE_DISK_SIZE:-30g}"
 
 echo "Starting Minikube profile: ${PROFILE}"
