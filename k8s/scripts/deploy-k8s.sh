@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 K8S_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 NAMESPACE="patient-management-k8s"
-PROFILE="${MINIKUBE_PROFILE:-patient-management}"
+PROFILE="${MINIKUBE_PROFILE:-minikube}"
 
 echo "Deploying patient-management Kubernetes environment..."
 

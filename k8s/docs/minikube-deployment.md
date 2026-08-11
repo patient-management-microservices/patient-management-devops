@@ -32,12 +32,17 @@ cd patient-management-devops/k8s
 ./scripts/minikube-start.sh
 ```
 
-The script starts a dedicated Minikube profile named `patient-management`.
+The script starts the default Minikube profile named `minikube`.
 You can override its defaults:
 
 ```bash
-MINIKUBE_CPUS=6 MINIKUBE_MEMORY=12288 ./scripts/minikube-start.sh
+MINIKUBE_CPUS=4 MINIKUBE_MEMORY=8192 ./scripts/minikube-start.sh
 ```
+
+Default resource settings:
+
+- CPUs: `2`
+- Memory: `3072MB`
 
 ## Deploy
 
@@ -61,8 +66,8 @@ The deploy script applies resources in this order:
 Using NodePort:
 
 ```bash
-minikube ip --profile=patient-management
-curl http://$(minikube ip --profile=patient-management):30080/api/auth/login
+minikube ip
+curl http://$(minikube ip):30080/api/auth/login
 ```
 
 Using port-forward:
@@ -75,7 +80,7 @@ curl http://localhost:4005/api/auth/login
 Kafdrop:
 
 ```bash
-http://$(minikube ip --profile=patient-management):30091
+http://$(minikube ip):30091
 ```
 
 On a headless Ubuntu server, open the same URL from a machine that can reach the server, or use SSH port forwarding.
@@ -85,13 +90,13 @@ On a headless Ubuntu server, open the same URL from a machine that can reach the
 Enable ingress with:
 
 ```bash
-minikube addons enable ingress --profile=patient-management
+minikube addons enable ingress
 ```
 
 Map the Minikube IP to the local host name:
 
 ```bash
-echo "$(minikube ip --profile=patient-management) patient-management.local" | sudo tee -a /etc/hosts
+echo "$(minikube ip) patient-management.local" | sudo tee -a /etc/hosts
 ```
 
 Then use:
