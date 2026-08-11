@@ -62,13 +62,24 @@ spec:
                 configMapKeyRef:
                   name: patient-management-config
                   key: SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER
+            - name: JAVA_TOOL_OPTIONS
+              value: "-Xms128m -Xmx384m"
           readinessProbe:
             tcpSocket:
               port: 4003
-            initialDelaySeconds: 45
+            initialDelaySeconds: 60
             periodSeconds: 10
+            failureThreshold: 18
           livenessProbe:
             tcpSocket:
               port: 4003
-            initialDelaySeconds: 90
+            initialDelaySeconds: 150
             periodSeconds: 20
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

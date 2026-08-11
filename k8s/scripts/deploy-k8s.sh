@@ -6,6 +6,21 @@ K8S_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 NAMESPACE="patient-management-k8s"
 PROFILE="${MINIKUBE_PROFILE:-minikube}"
 
+wait_for_deployment() {
+  local deployment="$1"
+  local timeout="$2"
+
+  if ! kubectl rollout status "deployment/${deployment}" -n "${NAMESPACE}" --timeout="${timeout}"; then
+    echo
+    echo "${deployment} did not become ready in time. Showing diagnostics..."
+    kubectl get pods -n "${NAMESPACE}" -l "app=${deployment}" -o wide || true
+    kubectl describe deployment "${deployment}" -n "${NAMESPACE}" || true
+    kubectl describe pods -n "${NAMESPACE}" -l "app=${deployment}" || true
+    kubectl logs "deployment/${deployment}" -n "${NAMESPACE}" --tail=160 || true
+    exit 1
+  fi
+}
+
 echo "Deploying patient-management Kubernetes environment..."
 
 kubectl apply -f "${K8S_DIR}/namespace.yaml"
@@ -40,12 +55,12 @@ kubectl apply -f "${K8S_DIR}/services/api-gateway.yaml"
 kubectl apply -f "${K8S_DIR}/ingress/"
 
 echo "Waiting for application services..."
-kubectl rollout status deployment/billing-service -n "${NAMESPACE}" --timeout=180s
-kubectl rollout status deployment/patient-service -n "${NAMESPACE}" --timeout=240s
-kubectl rollout status deployment/analytics-service -n "${NAMESPACE}" --timeout=180s
-kubectl rollout status deployment/auth-service -n "${NAMESPACE}" --timeout=240s
-kubectl rollout status deployment/api-gateway -n "${NAMESPACE}" --timeout=180s
-kubectl rollout status deployment/kafdrop -n "${NAMESPACE}" --timeout=180s
+wait_for_deployment billing-service 300s
+wait_for_deployment patient-service 360s
+wait_for_deployment analytics-service 300s
+wait_for_deployment auth-service 360s
+wait_for_deployment api-gateway 300s
+wait_for_deployment kafdrop 300s
 
 echo "Deployment complete."
 kubectl get pods,svc,ingress,pvc -n "${NAMESPACE}"

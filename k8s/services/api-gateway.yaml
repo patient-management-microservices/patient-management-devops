@@ -53,13 +53,24 @@ spec:
                 configMapKeyRef:
                   name: patient-management-config
                   key: AUTH_SERVICE_URL
+            - name: JAVA_TOOL_OPTIONS
+              value: "-Xms128m -Xmx384m"
           readinessProbe:
             tcpSocket:
               port: 4005
-            initialDelaySeconds: 30
+            initialDelaySeconds: 60
             periodSeconds: 10
+            failureThreshold: 18
           livenessProbe:
             tcpSocket:
               port: 4005
-            initialDelaySeconds: 60
+            initialDelaySeconds: 150
             periodSeconds: 20
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

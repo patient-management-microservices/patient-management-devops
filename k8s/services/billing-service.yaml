@@ -57,13 +57,24 @@ spec:
                 configMapKeyRef:
                   name: patient-management-config
                   key: BILLING_GRPC_PORT
+            - name: JAVA_TOOL_OPTIONS
+              value: "-Xms128m -Xmx384m"
           readinessProbe:
             tcpSocket:
               port: 4001
-            initialDelaySeconds: 20
+            initialDelaySeconds: 45
             periodSeconds: 10
+            failureThreshold: 18
           livenessProbe:
             tcpSocket:
               port: 4001
-            initialDelaySeconds: 60
+            initialDelaySeconds: 120
             periodSeconds: 20
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

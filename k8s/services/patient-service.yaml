@@ -102,13 +102,24 @@ spec:
                 configMapKeyRef:
                   name: patient-management-config
                   key: KAFKA_BOOTSTRAP_SERVERS
+            - name: JAVA_TOOL_OPTIONS
+              value: "-Xms128m -Xmx512m"
           readinessProbe:
             tcpSocket:
               port: 4000
-            initialDelaySeconds: 45
+            initialDelaySeconds: 60
             periodSeconds: 10
+            failureThreshold: 18
           livenessProbe:
             tcpSocket:
               port: 4000
-            initialDelaySeconds: 90
+            initialDelaySeconds: 150
             periodSeconds: 20
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 150m
+              memory: 384Mi
+            limits:
+              cpu: 750m
+              memory: 640Mi
