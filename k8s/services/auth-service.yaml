@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: patient-management-k8s
+  labels:
+    app: auth-service
+spec:
+  type: ClusterIP
+  selector:
+    app: auth-service
+  ports:
+    - name: http
+      port: 4004
+      targetPort: 4004
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: patient-management-k8s
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+        - name: auth-service
+          image: ghcr.io/patient-management-microservices/auth-service:feature-auth-service
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 4004
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: patient-management-config
+                  key: SPRING_PROFILES_ACTIVE
+            - name: SERVER_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: patient-management-config
+                  key: AUTH_SERVICE_PORT
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: patient-management-config
+                  key: AUTH_DATASOURCE_URL
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: patient-management-secrets
+                  key: POSTGRES_USER
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: patient-management-secrets
+                  key: POSTGRES_PASSWORD
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              valueFrom:
+                configMapKeyRef:
+                  name: patient-management-config
+                  key: SPRING_JPA_HIBERNATE_DDL_AUTO
+            - name: SPRING_SQL_INIT_MODE
+              valueFrom:
+                configMapKeyRef:
+                  name: patient-management-config
+                  key: AUTH_SQL_INIT_MODE
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: patient-management-secrets
+                  key: JWT_SECRET
+            - name: JWT_EXPIRATION_MS
+              valueFrom:
+                configMapKeyRef:
+                  name: patient-management-config
+                  key: JWT_EXPIRATION_MS
+            - name: JWT_ISSUER
+              valueFrom:
+                configMapKeyRef:
+                  name: patient-management-config
+                  key: JWT_ISSUER
+            - name: JWT_AUDIENCE
+              valueFrom:
+                configMapKeyRef:
+                  name: patient-management-config
+                  key: JWT_AUDIENCE
+          readinessProbe:
+            tcpSocket:
+              port: 4004
+            initialDelaySeconds: 45
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 4004
+            initialDelaySeconds: 90
+            periodSeconds: 20

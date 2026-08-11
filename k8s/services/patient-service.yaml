@@ -1,0 +1,114 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: patient-service
+  namespace: patient-management-k8s
+  labels:
+    app: patient-service
+spec:
+  type: ClusterIP
+  selector:
+    app: patient-service
+  ports:
+    - name: http
+      port: 4000
+      targetPort: 4000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: patient-service
+  namespace: patient-management-k8s
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: patient-service
+  template:
+    metadata:
+      labels:
+        app: patient-service
+    spec:
+      containers:
+        - name: patient-service
+          image: ghcr.io/patient-management-microservices/patient-service:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 4000
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: patient-management-config
+                  key: SPRING_PROFILES_ACTIVE
+            - name: SERVER_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: patient-management-config
+                  key: PATIENT_SERVICE_PORT
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: patient-management-config
+                  key: PATIENT_DATASOURCE_URL
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: patient-management-secrets
+                  key: POSTGRES_USER
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: patient-management-secrets
+                  key: POSTGRES_PASSWORD
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              valueFrom:
+                configMapKeyRef:
+                  name: patient-management-config
+                  key: SPRING_JPA_HIBERNATE_DDL_AUTO
+            - name: SPRING_SQL_INIT_MODE
+              valueFrom:
+                configMapKeyRef:
+                  name: patient-management-config
+                  key: PATIENT_SQL_INIT_MODE
+            - name: BILLING_SERVICE_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  name: patient-management-config
+                  key: BILLING_SERVICE_ADDRESS
+            - name: BILLING_SERVICE_GRPC_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: patient-management-config
+                  key: BILLING_SERVICE_GRPC_PORT
+            - name: SPRING_KAFKA_TOPIC_PATIENT
+              valueFrom:
+                configMapKeyRef:
+                  name: patient-management-config
+                  key: KAFKA_TOPIC_PATIENT
+            - name: SPRING_KAFKA_PRODUCER_KEY_SERIALIZER
+              valueFrom:
+                configMapKeyRef:
+                  name: patient-management-config
+                  key: SPRING_KAFKA_PRODUCER_KEY_SERIALIZER
+            - name: SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER
+              valueFrom:
+                configMapKeyRef:
+                  name: patient-management-config
+                  key: SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER
+            - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: patient-management-config
+                  key: KAFKA_BOOTSTRAP_SERVERS
+          readinessProbe:
+            tcpSocket:
+              port: 4000
+            initialDelaySeconds: 45
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 4000
+            initialDelaySeconds: 90
+            periodSeconds: 20

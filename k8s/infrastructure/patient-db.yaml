@@ -1,0 +1,93 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: patient-service-db
+  namespace: patient-management-k8s
+  labels:
+    app: patient-service-db
+spec:
+  type: ClusterIP
+  selector:
+    app: patient-service-db
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: patient-service-db
+  namespace: patient-management-k8s
+spec:
+  serviceName: patient-service-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: patient-service-db
+  template:
+    metadata:
+      labels:
+        app: patient-service-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:17
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: patient-management-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: patient-management-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: patient-management-secrets
+                  key: PATIENT_POSTGRES_DB
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - admin_user
+                - -d
+                - patient_db
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - admin_user
+                - -d
+                - patient_db
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          volumeMounts:
+            - name: patient-db-data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: patient-db-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
