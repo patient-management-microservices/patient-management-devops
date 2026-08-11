@@ -14,10 +14,15 @@ kubectl apply -f "${K8S_DIR}/infrastructure/patient-db.yaml"
 kubectl apply -f "${K8S_DIR}/infrastructure/auth-db.yaml"
 kubectl apply -f "${K8S_DIR}/infrastructure/kafka.yaml"
 
+if kubectl get pod kafka-0 -n "${NAMESPACE}" >/dev/null 2>&1; then
+  echo "Restarting Kafka pod so the latest StatefulSet template is used..."
+  kubectl delete pod kafka-0 -n "${NAMESPACE}" --wait=false
+fi
+
 echo "Waiting for databases and Kafka..."
 kubectl rollout status statefulset/patient-service-db -n "${NAMESPACE}" --timeout=180s
 kubectl rollout status statefulset/auth-service-db -n "${NAMESPACE}" --timeout=180s
-if ! kubectl rollout status statefulset/kafka -n "${NAMESPACE}" --timeout=420s; then
+if ! kubectl rollout status statefulset/kafka -n "${NAMESPACE}" --timeout=240s; then
   echo
   echo "Kafka did not become ready in time. Showing diagnostics..."
   kubectl get pods -n "${NAMESPACE}" -l app=kafka -o wide || true
