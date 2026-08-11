@@ -17,6 +17,7 @@ wait_for_deployment() {
     kubectl describe deployment "${deployment}" -n "${NAMESPACE}" || true
     kubectl describe pods -n "${NAMESPACE}" -l "app=${deployment}" || true
     kubectl logs "deployment/${deployment}" -n "${NAMESPACE}" --tail=160 || true
+    kubectl get events -n "${NAMESPACE}" --sort-by=.lastTimestamp | tail -40 || true
     exit 1
   fi
 }
@@ -26,6 +27,20 @@ echo "Deploying patient-management Kubernetes environment..."
 
 kubectl apply -f "${K8S_DIR}/namespace.yaml"
 kubectl apply -f "${K8S_DIR}/config/"
+
+if [[ -n "${GHCR_USERNAME:-}" && -n "${GHCR_TOKEN:-}" ]]; then
+  echo "Creating/updating GHCR image pull secret..."
+  kubectl create secret docker-registry ghcr-pull-secret \
+    --namespace="${NAMESPACE}" \
+    --docker-server=ghcr.io \
+    --docker-username="${GHCR_USERNAME}" \
+    --docker-password="${GHCR_TOKEN}" \
+    --dry-run=client \
+    -o yaml | kubectl apply -f -
+else
+  echo "GHCR_USERNAME/GHCR_TOKEN not set. Pulling GHCR images without a Kubernetes pull secret."
+fi
+
 kubectl apply -f "${K8S_DIR}/infrastructure/patient-db.yaml"
 kubectl apply -f "${K8S_DIR}/infrastructure/auth-db.yaml"
 kubectl apply -f "${K8S_DIR}/infrastructure/kafka.yaml"

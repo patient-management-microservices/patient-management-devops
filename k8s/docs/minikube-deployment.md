@@ -46,6 +46,13 @@ Default resource settings:
 
 ## Deploy
 
+If your GHCR images are private, export a GitHub username and a token that has package read access before deploying:
+
+```bash
+export GHCR_USERNAME=your-github-username
+export GHCR_TOKEN=your-github-token
+```
+
 ```bash
 cd patient-management-devops/k8s
 ./scripts/deploy-k8s.sh

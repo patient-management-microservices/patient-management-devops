@@ -29,6 +29,8 @@ spec:
       labels:
         app: auth-service
     spec:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
       containers:
         - name: auth-service
           image: ghcr.io/patient-management-microservices/auth-service:feature-auth-service
