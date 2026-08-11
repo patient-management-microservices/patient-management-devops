@@ -21,6 +21,7 @@ wait_for_deployment() {
   fi
 }
 
+
 echo "Deploying patient-management Kubernetes environment..."
 
 kubectl apply -f "${K8S_DIR}/namespace.yaml"
