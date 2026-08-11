@@ -17,7 +17,14 @@ kubectl apply -f "${K8S_DIR}/infrastructure/kafka.yaml"
 echo "Waiting for databases and Kafka..."
 kubectl rollout status statefulset/patient-service-db -n "${NAMESPACE}" --timeout=180s
 kubectl rollout status statefulset/auth-service-db -n "${NAMESPACE}" --timeout=180s
-kubectl rollout status statefulset/kafka -n "${NAMESPACE}" --timeout=420s
+if ! kubectl rollout status statefulset/kafka -n "${NAMESPACE}" --timeout=420s; then
+  echo
+  echo "Kafka did not become ready in time. Showing diagnostics..."
+  kubectl get pods -n "${NAMESPACE}" -l app=kafka -o wide || true
+  kubectl describe pod kafka-0 -n "${NAMESPACE}" || true
+  kubectl logs kafka-0 -n "${NAMESPACE}" --tail=160 || true
+  exit 1
+fi
 
 kubectl apply -f "${K8S_DIR}/infrastructure/kafdrop.yaml"
 kubectl apply -f "${K8S_DIR}/services/billing-service.yaml"
