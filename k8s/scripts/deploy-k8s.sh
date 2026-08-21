@@ -3,8 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 K8S_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-NAMESPACE="patient-management-k8s"
-PROFILE="${MINIKUBE_PROFILE:-minikube}"
+NAMESPACE="default"
 
 wait_for_deployment() {
   local deployment="$1"
@@ -25,7 +24,6 @@ wait_for_deployment() {
 
 echo "Deploying patient-management Kubernetes environment..."
 
-kubectl apply -f "${K8S_DIR}/namespace.yaml"
 kubectl apply -f "${K8S_DIR}/config/"
 
 if [[ -n "${GHCR_USERNAME:-}" && -n "${GHCR_TOKEN:-}" ]]; then
@@ -45,10 +43,10 @@ kubectl apply -f "${K8S_DIR}/infrastructure/patient-db.yaml"
 kubectl apply -f "${K8S_DIR}/infrastructure/auth-db.yaml"
 kubectl apply -f "${K8S_DIR}/infrastructure/kafka.yaml"
 
-if kubectl get pod kafka-0 -n "${NAMESPACE}" >/dev/null 2>&1; then
-  echo "Restarting Kafka pod so the latest StatefulSet template is used..."
-  kubectl delete pod kafka-0 -n "${NAMESPACE}" --wait=false
-fi
+# if kubectl get pod kafka-0 -n "${NAMESPACE}" >/dev/null 2>&1; then
+#   echo "Restarting Kafka pod so the latest StatefulSet template is used..."
+#   kubectl delete pod kafka-0 -n "${NAMESPACE}" --wait=false
+# fi
 
 echo "Waiting for databases and Kafka..."
 kubectl rollout status statefulset/patient-service-db -n "${NAMESPACE}" --timeout=180s
@@ -82,6 +80,6 @@ echo "Deployment complete."
 kubectl get pods,svc,ingress,pvc -n "${NAMESPACE}"
 
 echo
-echo "API gateway NodePort: http://$(minikube ip --profile="${PROFILE}"):30080"
-echo "Kafdrop NodePort:     http://$(minikube ip --profile="${PROFILE}"):30091"
+echo "API gateway NodePort: http://localhost:30080"
+echo "Kafdrop NodePort:     http://localhost:30091"
 echo "Optional port-forward: kubectl port-forward svc/api-gateway 4005:4005 -n ${NAMESPACE}"

@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: auth-service-db
-  namespace: patient-management-k8s
+  namespace: default
   labels:
     app: auth-service-db
 spec:
@@ -18,7 +18,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: auth-service-db
-  namespace: patient-management-k8s
+  namespace: default
 spec:
   serviceName: auth-service-db
   replicas: 1

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-NAMESPACE="patient-management-k8s"
+NAMESPACE="default"
 
 kubectl get pods -n "${NAMESPACE}" -o wide
 echo

@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-NAMESPACE="patient-management-k8s"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+K8S_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-echo "Deleting namespace: ${NAMESPACE}"
-kubectl delete namespace "${NAMESPACE}" --ignore-not-found
+echo "Deleting patient-management resources in default namespace..."
 
-echo "Kubernetes environment removal requested."
-echo "This deletes the app resources and namespaced PVCs for the Minikube environment only."
+kubectl delete -f "${K8S_DIR}/ingress/" --ignore-not-found
+kubectl delete -f "${K8S_DIR}/services/" --ignore-not-found
+kubectl delete -f "${K8S_DIR}/infrastructure/" --ignore-not-found
+kubectl delete -f "${K8S_DIR}/config/" --ignore-not-found
+kubectl delete secret ghcr-pull-secret -n default --ignore-not-found
+
+echo "Kubernetes environment removal complete."
